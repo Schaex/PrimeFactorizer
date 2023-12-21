@@ -1,6 +1,9 @@
 import java.awt.*;
 
 public class Main {
+    /**
+     * Barebone main method.
+     */
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             // Constructs the UI (see UI class).

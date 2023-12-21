@@ -2,7 +2,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class BigIntCounter implements ApplicationConstants {
+public class BigIntCounter extends ApplicationConstants {
     /**
      * Utility class for counting all the prime factors if a BigInteger.
      */

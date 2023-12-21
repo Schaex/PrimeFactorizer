@@ -1,96 +1,178 @@
 import javax.swing.*;
 import java.awt.*;
-import java.math.BigInteger;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UI implements ApplicationConstants {
+public class UI extends ApplicationConstants {
     /**
      * Utility method that enables building the UI as an object.
      */
-    static String inputText = "";
-    // Gets updated only once after the first input and then remains "true" for the rest of the runtime.
+    // Gets updated only once after the first input and then remains "true" until the history is cleared.
     static boolean hasHistory = false;
+    static int keyBindingCounter = 0;
 
-    // Frames that contain all the content except of the dialog.
+    // Frames that contain all the content except of the dialog and the optional extra JFrames.
     static final JFrame mainFrame = new JFrame("Prime Factory");
     static final JFrame historyFrame = new JFrame("History");
 
-    static final JPanel historyPanel = new JPanel();
-    static final JPanel buttonPanel = new JPanel();
-    static final JPanel outerPanel = new JPanel();
-    static final JPanel innerPanel = new JPanel();
+    // List to store all the extra JFrames to make them accessible for removal.
+    static final List<JFrame> allFrames = new ArrayList<>();
 
-    // Dialog
-    static JPanel dialogPanel = new JPanel(new GridLayout(5, 1));
+    static final JPanel listOuterPanel = new JPanel(new BorderLayout());
+    static final JPanel listPanel = new JPanel(new GridBagLayout());
+    static final JPanel listButtonPanel = new JPanel(new GridBagLayout());
+    static final JPanel historyOuterPanel = new JPanel(new BorderLayout());
+    static final JPanel historyPanel = new JPanel(new GridBagLayout());
+    static final JPanel historyButtonPanel = new JPanel(new GridBagLayout());
+
+    // Add scroll bars.
+    static final JScrollPane listScrollPane = new JScrollPane(listPanel);
+    static final JScrollPane historyScrollPane = new JScrollPane(historyPanel);
+
+    // Lists to store all the TextAreas in the correct order.
+    static List<TextArea> listTextAreasList = new ArrayList<>();
+    static List<TextArea> historyTextAreasList = new ArrayList<>();
+
+    // Dialog.
+    static JPanel dialogPanel = new JPanel(new GridLayout(6, 1));
     static JLabel dialogLabel1 = new JLabel("Enter numbers, each separated by a comma!");
-    static JLabel dialogLabel2 = new JLabel("Note that numbers with large prime factors take longer to compute");
-    static JLabel dialogLabel3 = new JLabel("Especially large numbers that are larger than 2147483647");
+    static JLabel dialogLabel2 = new JLabel("Note that numbers with large prime factors take longer to compute,");
+    static JLabel dialogLabel3 = new JLabel("Especially large numbers that are larger than 2147483647.");
     static JLabel dialogLabel4 = new JLabel("");
+    static JCheckBox dialogCheckBox = new JCheckBox("Open result in new window");
     static JTextField dialogTextField = new JTextField();
 
-    // "glue" component that takes all the remaining space.
-    static final Component glueBox = Box.createGlue();
+    static final TextArea historyEmptyTextArea = makeTextArea("Nothing to see here." + linesep + "Generate something!", 3, hintOfYellow);
+
+    // "glue" components that take all the remaining space.
+    static final Component listGlueBox = Box.createGlue();
     static final Component historyGlueBox = Box.createGlue();
 
-    static final JButton historyButton = new JButton("History");
-    static final JButton button = new JButton("Generate new list");
-
-    // name = null to get the default font family.
-    static final Font font = new Font(null, Font.PLAIN, 20);
-
-    //gridy = GridBagConstraints.RELATIVE to line up the components in the order they are added (in y-direction => up-down).
-    static GridBagConstraints textAreaConstraints = new GridBagConstraints(0, GridBagConstraints.RELATIVE, 1, 1, 1, 0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 3, 5), 0, 0);
-    static GridBagConstraints glueBoxConstraints = new GridBagConstraints(0, GridBagConstraints.RELATIVE, 1, 1, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(5, 5, 3, 5), 0, 0);
-
-    static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // Buttons.
+    static final JButton historyButton = new JButton("<html><u>H</u>istory</html>");
+    static final JButton generatorButton = new JButton("<html><u>G</u>enerate new List</html>");
+    static final JButton clearListButton = new JButton("<html><u>C</u>lear List</html>");
+    static final JButton clearHistoryButton = new JButton("<html><u>C</u>lear History</html>");
+    static final JButton clearAllButton = new JButton("<html>Clear <u>E</u>verything</html>");
 
 
     /**
      * Constructor that sets up all components.
      */
     public UI() {
-        mainFrame.setSize(1200, (int) (Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9d));
+        // Main frame setup.
+        mainFrame.setSize((int) (Toolkit.getDefaultToolkit().getScreenSize().getWidth() / 3d), (int) (Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9d));
         mainFrame.setLocationRelativeTo(null);
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        historyFrame.setSize(1200, (int) (Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9d));
+        listButtonPanel.add(historyButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
+        listButtonPanel.add(generatorButton, new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
+        listButtonPanel.add(Box.createHorizontalGlue(), new GridBagConstraints(2, 0, 1, 1, 1, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 3, 5), 0, 0));
+        listButtonPanel.add(clearListButton, new GridBagConstraints(3, 0, 1, 1, 0, 0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
+        listButtonPanel.add(clearAllButton, new GridBagConstraints(4, 0, 1, 1, 0, 0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
+
+        listOuterPanel.add(listButtonPanel, BorderLayout.PAGE_START);
+        listOuterPanel.add(listScrollPane, BorderLayout.CENTER);
+
+        mainFrame.add(listOuterPanel);
+
+        // History frame setup.
+        historyFrame.setSize((int) (Toolkit.getDefaultToolkit().getScreenSize().getWidth() / 3d), (int) (Toolkit.getDefaultToolkit().getScreenSize().getHeight() * 0.9d));
         historyFrame.setLocationRelativeTo(null);
+        historyFrame.setLocation(0, historyFrame.getY());
 
-        historyPanel.setLayout(new GridBagLayout());
-        JScrollPane historyScrollPane = new JScrollPane(historyPanel);
-        historyFrame.add(historyScrollPane);
-
-        historyPanel.add(makeTextArea("Nothing to see here." + linesep + "Generate something!", 3), textAreaConstraints);
+        historyPanel.add(historyEmptyTextArea, textAreaConstraints);
         historyPanel.add(historyGlueBox, glueBoxConstraints);
 
-        historyButton.addActionListener(e -> historyFrame.setVisible(true));
-        button.addActionListener(e -> openDialogBox(false));
+        historyButtonPanel.add(clearHistoryButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
+        historyButtonPanel.add(Box.createHorizontalGlue(), new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 3, 5), 0, 0));
 
-        innerPanel.setLayout(new GridBagLayout());
+        historyOuterPanel.add(historyButtonPanel, BorderLayout.PAGE_START);
+        historyOuterPanel.add(historyScrollPane, BorderLayout.CENTER);
 
-        buttonPanel.setLayout(new GridBagLayout());
-        buttonPanel.add(historyButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
-        buttonPanel.add(button, new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 3, 5), 0, 0));
-        buttonPanel.add(Box.createHorizontalGlue(), new GridBagConstraints(2, 0, 1, 1, 1, 0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 3, 5), 0, 0));
+        historyFrame.add(historyOuterPanel);
 
-        JScrollPane scrollPane = new JScrollPane(innerPanel);
-
-        outerPanel.setLayout(new BorderLayout());
-        outerPanel.add(buttonPanel, BorderLayout.PAGE_START);
-        outerPanel.add(scrollPane, BorderLayout.CENTER);
-
-        mainFrame.add(outerPanel);
-
+        // Builds the dialog panel.
         dialogPanel.add(dialogLabel1);
         dialogPanel.add(dialogLabel2);
         dialogPanel.add(dialogLabel3);
         dialogPanel.add(dialogLabel4);
+        dialogPanel.add(dialogCheckBox);
         dialogPanel.add(dialogTextField);
 
+        // Adds ActionListeners to the buttons so that they act when they are clicked.
+        historyButton.addActionListener(e -> historyFrame.setVisible(true));
+        generatorButton.addActionListener(e -> openDialogBox(false));
+        clearListButton.addActionListener(e -> clearList());
+        clearHistoryButton.addActionListener(e -> clearHistory());
+        clearAllButton.addActionListener(e -> {
+            clearList();
+            clearHistory();
+            clearExtraFrames();
+        });
+
+        // Adds key bindings to the JFrames.
+        createKeyBinding(mainFrame, KeyEvent.VK_G, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openDialogBox(false);
+            }
+        });
+        createKeyBinding(mainFrame, KeyEvent.VK_H, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                historyFrame.setVisible(true);
+            }
+        });
+        createKeyBinding(mainFrame, KeyEvent.VK_C, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearList();
+            }
+        });
+        createKeyBinding(mainFrame, KeyEvent.VK_E, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearList();
+                clearHistory();
+                clearExtraFrames();
+            }
+        });
+        createKeyBinding(historyFrame, KeyEvent.VK_C, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearHistory();
+            }
+        });
+        createKeyBinding(historyFrame, KeyEvent.VK_ESCAPE, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                historyFrame.setVisible(false);
+            }
+        });
+
+        // Initial prompt. This is the only time "isStartup" is "true".
         openDialogBox(true);
 
+        // Shows the main frame after openDialogBox(true) has finished, unless the application was terminated.
         mainFrame.setVisible(true);
+    }
+
+    /**
+     * Utility method to create key bindings to JFrames if they are (in) the focused window.
+     */
+    static void createKeyBinding(JFrame frame, int keyEvent, AbstractAction abstractAction) {
+        InputMap inputMap = frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = frame.getRootPane().getActionMap();
+
+        KeyStroke keyStroke = KeyStroke.getKeyStroke(keyEvent, 0);
+        inputMap.put(keyStroke, keyBindingCounter);
+        actionMap.put(keyBindingCounter, abstractAction);
+
+        keyBindingCounter++;
     }
 
     /**
@@ -109,120 +191,107 @@ public class UI implements ApplicationConstants {
             // Resets the text field.
             dialogTextField.setText("");
 
+            // Early return if "OK" has been clicked without providing any adequate input.
             if (input.isEmpty()) {
                 return;
             }
 
-            if (inputText.isEmpty()) {
-                inputText = "Your input: ";
+            input = "Your input: " + input.replaceAll(",", ", ");
+            String timestamp = LocalDateTime.now().format(formatter);
+
+            updateHistory(input, timestamp);
+
+            if (dialogCheckBox.isSelected()) {
+
+
+                new NewWindowMiniUI(input, timestamp);
+
+                return;
             }
 
-            inputText = inputText + input.replaceAll(",", ", ") + ", ";
-
             // Displays waiting message.
-            innerPanel.removeAll();
-            TextArea waitingText = makeTextArea(inputText.substring(0, inputText.length() - 2) + linesep + linesep + "Calculating... please wait!", 20);
-            innerPanel.add(waitingText, textAreaConstraints);
-            innerPanel.add(glueBox, glueBoxConstraints);
+            listPanel.removeAll();
+            TextArea waitingText = makeTextArea(input + linesep + linesep + "Calculating... please wait!", 20, null);
+            listPanel.add(waitingText, textAreaConstraints);
+
+            for (TextArea textArea : listTextAreasList) {
+                listPanel.add(textArea, textAreaConstraints);
+            }
+
+            listPanel.add(listGlueBox, glueBoxConstraints);
             mainFrame.validate();
 
             // Passes the task to the ExecutorService to keep the application responsive.
             String finalInput = input;
             executorService.submit(() -> {
-                if (!hasHistory) {
-                    historyPanel.removeAll();
-                    hasHistory = true;
+                // Heap of the computation.
+                List<TextArea> newTextAreas = createOutput(finalInput);
+
+                // Updates the list, making sure to apply the correct order.
+                newTextAreas.addAll(listTextAreasList);
+                listTextAreasList = newTextAreas;
+
+                listPanel.removeAll();
+
+                for (TextArea textArea : listTextAreasList) {
+                    listPanel.add(textArea, textAreaConstraints);
                 }
 
-                // Updates the history.
-                historyPanel.remove(historyGlueBox);
-                historyPanel.add(makeTextArea(finalInput.replaceAll(",", ", "), 3), textAreaConstraints);
-                historyPanel.add(historyGlueBox, glueBoxConstraints);
-                historyFrame.validate();
+                listPanel.add(listGlueBox, glueBoxConstraints);
 
-                // Heap of the computation.
-                createOutput(parseInput(finalInput));
-
-                // Reverts the "waiting" stage.
-                inputText = "";
-                innerPanel.remove(waitingText);
                 mainFrame.validate();
             });
         } else {
             // Only true with initial call of openDialogBox(boolean isStartup).
-            // Terminates the application if the user presses "cancel" or closes the dialog.
+            // Terminates the application if the user clicks "cancel" or closes the dialog.
             if (isStartup) {
                 System.exit(0);
             }
         }
     }
 
-    /**
-     * Utility method.
-     * Strips strings to make parsing easier.
-     */
-    static String legalizeString(String s) {
-        String legalString = s.replaceAll("[^0-9,]", "");
-        legalString = legalString.replaceAll(",{2,}", ",");
-        legalString = legalString.replaceAll("^,", "");
-        legalString = legalString.replaceAll(",$", "");
-
-        if (legalString.isEmpty()) {
-            return "";
+    static void updateHistory(String input, String timestamp) {
+        if (!hasHistory) {
+            historyPanel.removeAll();
+            hasHistory = true;
         }
 
-        return legalString;
-    }
+        List<TextArea> newHistoryTextArea = new ArrayList<>();
+        newHistoryTextArea.add(makeTextArea(timestamp + linesep + (input.split(",").length) + " numbers" + linesep + linesep + input, 3 + (input.length() / 90), hintOfYellow));
+        newHistoryTextArea.addAll(historyTextAreasList);
+        historyTextAreasList = newHistoryTextArea;
 
-    /**
-     * Parses the "legalized" String from legalizeString(String s) and returns the numbers as an array of BigIntegers.
-     */
-    static BigInteger[] parseInput(String input) {
-        String s = input.replaceAll("[^0-9,]", "");
-        String[] stringArray = s.split(",", -1);
-
-        BigInteger[] intArray = new BigInteger[stringArray.length];
-
-        for (int i = 0; i < intArray.length; i++) {
-            intArray[i] = new BigInteger(stringArray[i]);
+        for (TextArea textArea : historyTextAreasList) {
+            historyPanel.add(textArea, textAreaConstraints);
         }
 
-        return intArray;
+        historyPanel.add(historyGlueBox, glueBoxConstraints);
+        historyPanel.validate();
     }
 
-    /**
-     * Goes through the array of BigIntegers from ParseInput(String input).
-     * Checks for each number if it can not be expressed as an int (Integer.MAX_VALUE = 2147483647) and chooses the correct method for computation.
-     * This is important because calculations on BigIntegers are slower than on int.
-     */
-    static void createOutput(BigInteger[] bigIntsToFactorize) {
-        innerPanel.add(makeTextArea(inputText.substring(0, inputText.length() - 2), 3), textAreaConstraints);
+    static void clearList() {
+        listTextAreasList.clear();
+        listPanel.removeAll();
+        listPanel.add(listGlueBox, glueBoxConstraints);
+        mainFrame.validate();
+    }
 
-        for (BigInteger i : bigIntsToFactorize) {
-            String s;
-            if (i.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
-                s = BigIntCounter.primeFactorization(i);
-            } else {
-                s = IntCounter.primeFactorization(i.intValue());
+    static void clearHistory() {
+        historyTextAreasList.clear();
+        historyPanel.removeAll();
+        hasHistory = false;
+        historyPanel.add(historyEmptyTextArea, textAreaConstraints);
+        historyPanel.add(historyGlueBox, glueBoxConstraints);
+        historyFrame.validate();
+    }
+
+    static void clearExtraFrames() {
+        for (JFrame frame : allFrames) {
+            while (frame.isVisible() && frame.getComponents().length != 0) {
+                frame.setVisible(false);
+                frame.removeAll();
             }
-
-            int rows = s.split(linesep, -1).length + (s.length() / 100);
-            innerPanel.add(makeTextArea(s, rows), textAreaConstraints);
+            allFrames.remove(frame);
         }
-
-        innerPanel.remove(glueBox);
-        innerPanel.add(glueBox, glueBoxConstraints);
-    }
-
-    /**
-     * Utility method that returns the default TextArea for this application.
-     */
-    static TextArea makeTextArea(String text, int rows) {
-        TextArea textArea = new TextArea(text, rows, 10, TextArea.SCROLLBARS_NONE);
-        textArea.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-        textArea.setFont(font);
-        textArea.setEditable(false);
-
-        return textArea;
     }
 }

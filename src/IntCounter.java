@@ -1,7 +1,7 @@
 import java.util.Map;
 import java.util.TreeMap;
 
-public class IntCounter implements ApplicationConstants {
+public class IntCounter extends ApplicationConstants {
     /**
      * Utility class for counting all the prime factors if an int
      */
