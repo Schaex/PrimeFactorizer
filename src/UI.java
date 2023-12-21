@@ -31,6 +31,7 @@ public class UI implements ApplicationConstants {
 
     // "glue" component that takes all the remaining space.
     static final Component glueBox = Box.createGlue();
+    static final Component historyGlueBox = Box.createGlue();
 
     static final JButton historyButton = new JButton("History");
     static final JButton button = new JButton("Generate new list");
@@ -61,7 +62,7 @@ public class UI implements ApplicationConstants {
         historyFrame.add(historyScrollPane);
 
         historyPanel.add(makeTextArea("Nothing to see here." + linesep + "Generate something!", 3), textAreaConstraints);
-        historyPanel.add(glueBox, glueBoxConstraints);
+        historyPanel.add(historyGlueBox, glueBoxConstraints);
 
         historyButton.addActionListener(e -> historyFrame.setVisible(true));
         button.addActionListener(e -> openDialogBox(false));
@@ -118,15 +119,14 @@ public class UI implements ApplicationConstants {
 
             inputText = inputText + input.replaceAll(",", ", ");
 
+            // Displays waiting message.
             innerPanel.removeAll();
-            TextArea waitingText = new TextArea(inputText + linesep + linesep + "Calculating... please wait!", 20, 10, TextArea.SCROLLBARS_NONE);
-            waitingText.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-            waitingText.setFont(font);
-            waitingText.setEditable(false);
-            innerPanel.add(waitingText);
-            mainFrame.setVisible(true);
+            TextArea waitingText = makeTextArea(inputText + linesep + linesep + "Calculating... please wait!", 20);
+            innerPanel.add(waitingText, textAreaConstraints);
+            innerPanel.add(glueBox, glueBoxConstraints);
             mainFrame.validate();
 
+            // Passes the task to the ExecutorService to keep the application responsive.
             String finalInput = input;
             executorService.submit(() -> {
                 if (!hasHistory) {
@@ -134,18 +134,23 @@ public class UI implements ApplicationConstants {
                     hasHistory = true;
                 }
 
-                historyPanel.remove(glueBox);
+                // Updates the history.
+                historyPanel.remove(historyGlueBox);
                 historyPanel.add(makeTextArea(finalInput.replaceAll(",", ", "), 3), textAreaConstraints);
-                historyPanel.add(glueBox, glueBoxConstraints);
+                historyPanel.add(historyGlueBox, glueBoxConstraints);
                 historyFrame.validate();
+
+                // Heap of the computation.
                 createOutput(parseInput(finalInput));
+
+                // Reverts the "waiting" stage.
                 inputText = "";
                 innerPanel.remove(waitingText);
                 mainFrame.validate();
             });
         } else {
             // Only true with initial call of openDialogBox(boolean isStartup).
-            // Closes the application if the user presses "cancel" or closes the dialog.
+            // Terminates the application if the user presses "cancel" or closes the dialog.
             if (isStartup) {
                 System.exit(0);
             }
@@ -153,6 +158,7 @@ public class UI implements ApplicationConstants {
     }
 
     /**
+     * Utility method.
      * Strips strings to make parsing easier.
      */
     static String legalizeString(String s) {
@@ -191,6 +197,7 @@ public class UI implements ApplicationConstants {
      */
     static void createOutput(BigInteger[] bigIntsToFactorize) {
         innerPanel.add(makeTextArea(inputText, 3), textAreaConstraints);
+
         for (BigInteger i : bigIntsToFactorize) {
             String s;
             if (i.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
@@ -202,6 +209,8 @@ public class UI implements ApplicationConstants {
             int rows = s.split(linesep, -1).length + (s.length() / 100);
             innerPanel.add(makeTextArea(s, rows), textAreaConstraints);
         }
+
+        innerPanel.remove(glueBox);
         innerPanel.add(glueBox, glueBoxConstraints);
     }
 
