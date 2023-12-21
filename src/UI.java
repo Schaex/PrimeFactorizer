@@ -257,7 +257,7 @@ public class UI extends ApplicationConstants {
         }
 
         List<TextArea> newHistoryTextArea = new ArrayList<>();
-        newHistoryTextArea.add(makeTextArea(timestamp + linesep + (input.split(",").length) + " numbers" + linesep + linesep + input, 3 + (input.length() / 90), hintOfYellow));
+        newHistoryTextArea.add(makeTextArea(timestamp + linesep + (input.split(",").length) + " numbers" + linesep + linesep + input, 4 + (input.length() / 90), hintOfYellow));
         newHistoryTextArea.addAll(historyTextAreasList);
         historyTextAreasList = newHistoryTextArea;
 
