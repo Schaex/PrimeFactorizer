@@ -117,11 +117,11 @@ public class UI implements ApplicationConstants {
                 inputText = "Your input: ";
             }
 
-            inputText = inputText + input.replaceAll(",", ", ");
+            inputText = inputText + input.replaceAll(",", ", ") + ", ";
 
             // Displays waiting message.
             innerPanel.removeAll();
-            TextArea waitingText = makeTextArea(inputText + linesep + linesep + "Calculating... please wait!", 20);
+            TextArea waitingText = makeTextArea(inputText.substring(0, inputText.length() - 2) + linesep + linesep + "Calculating... please wait!", 20);
             innerPanel.add(waitingText, textAreaConstraints);
             innerPanel.add(glueBox, glueBoxConstraints);
             mainFrame.validate();
@@ -196,7 +196,7 @@ public class UI implements ApplicationConstants {
      * This is important because calculations on BigIntegers are slower than on int.
      */
     static void createOutput(BigInteger[] bigIntsToFactorize) {
-        innerPanel.add(makeTextArea(inputText, 3), textAreaConstraints);
+        innerPanel.add(makeTextArea(inputText.substring(0, inputText.length() - 2), 3), textAreaConstraints);
 
         for (BigInteger i : bigIntsToFactorize) {
             String s;
