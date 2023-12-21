@@ -101,12 +101,12 @@ public class UI implements ApplicationConstants {
     static void openDialogBox(boolean isStartup) {
         int result = JOptionPane.showConfirmDialog(null, dialogPanel, "Input", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-        // Resets the text field.
-        dialogTextField.setText("");
-
         if (result == JOptionPane.OK_OPTION) {
             String input = dialogTextField.getText();
             input = legalizeString(input);
+
+            // Resets the text field.
+            dialogTextField.setText("");
 
             if (input.isEmpty()) {
                 return;
